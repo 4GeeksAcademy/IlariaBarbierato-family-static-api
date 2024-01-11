@@ -26,17 +26,40 @@ def sitemap():
     return generate_sitemap(app)
 
 @app.route('/members', methods=['GET'])
-def handle_hello():
-
+def get_family_members():
     # this is how you can use the Family datastructure by calling its methods
     members = jackson_family.get_all_members()
-    response_body = {
-        "hello": "world",
-        "family": members
-    }
+    return jsonify({"msg" : "Ok", "family": members}), 200
 
+@app.route('/member/<int:member_id>', methods=['GET'])
+def get_specific_member(member_id):
+    member = jackson_family.get_member(member_id)
+    if member == None:
+        return jsonify({"msg" : "There is no member whose id is {}".format(member_id)}), 400
+    return jsonify({"msg": "The member whose id is {} has been correctly found".format(member_id), "member": member}), 200
 
-    return jsonify(response_body), 200
+@app.route('/member', methods=['POST'])
+def add_new_member():
+    body = request.get_json(silent=True)
+    if body is None:
+        return jsonify({"msg" : "You must send information in the body"}), 400
+    if "first_name" not in body:
+        return jsonify({"msg" : "The first_name field is obligatory"}), 400
+    if "age" not in body:
+        return jsonify({"msg" : "The age field is obligatory"}), 400
+    if "lucky_number" not in body:
+        return jsonify({"msg" : "The lucky_number field is obligatory"}), 400
+    new_member = request.get_json()
+    familiy_with_new_member = jackson_family.add_member(new_member)
+    return jsonify({"msg": "This member has been correctly added to the family", "family": familiy_with_new_member}), 200
+
+@app.route('/member/<int:member_id>', methods=['DELETE'])
+def delete_family_member(member_id):
+    member = jackson_family.get_member(member_id)
+    if member == None:
+        return jsonify({"msg" : "There is no member whose id is {}".format(member_id)}), 400
+    family_without_member = jackson_family.delete_member(member_id)
+    return jsonify({"msg" : "The member whose id was {} has been correctly deleted".format(member_id), "family" : family_without_member}), 200
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
